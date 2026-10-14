@@ -12,6 +12,8 @@ var _bar: ProgressBar
 var _pct: Label
 var _paths: Array[String] = []
 var _idx: int = 0
+var _web_direct: bool = false
+var _fake_t: float = 0.0
 
 func _ready() -> void:
 	layer = 60
@@ -129,12 +131,31 @@ func _play_loading() -> void:
 		var p: String = "res://assets/cars/%s.glb" % String(CarFactory.CAR_MODELS[i % CarFactory.CAR_MODELS.size()]["f"])
 		if not _paths.has(p):
 			_paths.append(p)
-	for p in _paths:
-		ResourceLoader.load_threaded_request(p)
+	if OS.has_feature("web"):
+		_web_direct = true
+		for p in _paths:
+			load(p)
+	else:
+		for p in _paths:
+			ResourceLoader.load_threaded_request(p)
 	set_process(true)
 
-func _process(_delta: float) -> void:
+func _finish_loading() -> void:
+	set_process(false)
+	var tw := create_tween()
+	tw.tween_property(_load_layer, "modulate:a", 0.0, 0.4)
+	tw.tween_callback(func(): finished.emit())
+
+func _process(delta: float) -> void:
 	if not _load_layer.visible:
+		return
+	if _web_direct:
+		_fake_t += delta
+		var pct_w: float = clampf(_fake_t / 1.2, 0.0, 1.0) * 100.0
+		_bar.value = pct_w
+		_pct.text = "Loading... %d%%" % int(pct_w)
+		if pct_w >= 100.0:
+			_finish_loading()
 		return
 	if _idx < _paths.size():
 		var p: String = _paths[_idx]
@@ -151,7 +172,4 @@ func _process(_delta: float) -> void:
 	_bar.value = pct
 	_pct.text = "Loading... %d%%" % int(pct)
 	if _idx > _paths.size():
-		set_process(false)
-		var tw := create_tween()
-		tw.tween_property(_load_layer, "modulate:a", 0.0, 0.4)
-		tw.tween_callback(func(): finished.emit())
+		_finish_loading()

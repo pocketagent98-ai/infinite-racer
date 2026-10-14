@@ -50,6 +50,10 @@ func _ready() -> void:
 	racing = false
 	player.can_drive = false
 	hud.set_lobby(true)
+	if OS.has_feature("web"):
+		var q: Variant = JavaScriptBridge.eval("window.location.search", true)
+		if typeof(q) == TYPE_STRING and String(q).contains("auto=1"):
+			_start_race()
 
 func _build_world() -> void:
 	var difficulty: float = clampf(float(level - 1) / 45.0, 0.0, 1.0)
@@ -75,20 +79,26 @@ func _build_world() -> void:
 	skm.ground_horizon_color = theme["ground"]
 	skm.sun_angle_max = 25.0
 	skm.sun_curve = 0.15
-	skm.energy_multiplier = 1.2
+	skm.energy_multiplier = 1.0
 	sky.sky_material = skm
 	env.sky = sky
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-	env.ambient_light_energy = 1.0
+	env.ambient_light_energy = 0.28
 	env.fog_enabled = true
 	env.fog_light_color = theme["fog"]
 	env.fog_density = 0.0018
 	env.glow_enabled = true
-	env.glow_intensity = 0.6
+	env.glow_intensity = 0.18
 	env.glow_bloom = 0.12
-	env.glow_hdr_threshold = 1.0
+	env.glow_hdr_threshold = 1.5
 	env.tonemap_mode = Environment.TONE_MAPPER_ACES
-	env.tonemap_exposure = 1.05
+	env.tonemap_exposure = 0.62
+	env.fog_enabled = true
+	env.fog_light_color = theme["fog"]
+	env.fog_light_energy = 0.9
+	env.fog_density = 0.008
+	env.fog_aerial_perspective = 0.15
+	env.fog_sky_affect = 0.25
 	env.adjustment_enabled = true
 	env.adjustment_saturation = 1.18
 	env.adjustment_contrast = 1.08
@@ -99,7 +109,7 @@ func _build_world() -> void:
 
 	var sun := DirectionalLight3D.new()
 	sun.light_color = theme["sun"]
-	sun.light_energy = 1.15
+	sun.light_energy = 1.05
 	sun.rotation_degrees = Vector3(-52, -35, 0)
 	sun.shadow_enabled = true
 	sun.directional_shadow_max_distance = 180.0

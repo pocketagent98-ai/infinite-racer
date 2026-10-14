@@ -285,8 +285,7 @@ func _build_pause() -> void:
 
 func set_lobby(on: bool) -> void:
 	_lobby.visible = on
-	if on:
-		_nitro.visible = false
+	_nitro.visible = not on
 
 func _input(event: InputEvent) -> void:
 	if _results.visible or _pause.visible:

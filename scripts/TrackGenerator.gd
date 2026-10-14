@@ -28,6 +28,8 @@ render_mode cull_disabled;
 uniform float noise_scale = 0.5;
 uniform float grain = 0.22;
 uniform float rough = 0.82;
+uniform float darken = 1.0;
+uniform vec3 base : source_color = vec3(0.22, 0.24, 0.27);
 varying vec3 wpos;
 float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123); }
 float vnoise(vec2 p){
@@ -42,10 +44,10 @@ void fragment(){
 	float n = vnoise(wpos.xz * noise_scale);
 	float n2 = vnoise(wpos.xz * noise_scale * 6.0);
 	float g = 1.0 + (n * 0.65 + n2 * 0.35 - 0.5) * grain * 2.0;
-	ALBEDO = COLOR.rgb * g;
+	ALBEDO = base * g * darken;
 	ROUGHNESS = rough;
 	METALLIC = 0.0;
-	SPECULAR = 0.4;
+	SPECULAR = 0.15;
 }
 """
 
@@ -68,16 +70,17 @@ void fragment(){
 	float n = vnoise(wpos.xz * noise_scale);
 	float n2 = vnoise(wpos.xz * noise_scale * 4.0);
 	float g = 1.0 + (n * 0.6 + n2 * 0.4 - 0.5) * grain * 2.0;
-	ALBEDO = base * g;
+	ALBEDO = base * g * 0.8;
 	ROUGHNESS = 0.95;
 }
 """
 
-static func _road_material() -> ShaderMaterial:
+static func _road_material(color: Color) -> ShaderMaterial:
 	var sh := Shader.new()
 	sh.code = ROAD_SHADER
 	var m := ShaderMaterial.new()
 	m.shader = sh
+	m.set_shader_parameter("base", Vector3(color.r, color.g, color.b))
 	return m
 
 static func _ground_material(color: Color) -> ShaderMaterial:
@@ -132,7 +135,7 @@ static func generate(track_seed: int, theme_index: int, difficulty: float) -> Di
 	var road := MeshInstance3D.new()
 	road.name = "Road"
 	road.mesh = road_mesh
-	road.material_override = _road_material()
+	road.material_override = _road_material(theme["road"])
 	root.add_child(road)
 
 	var road_body := StaticBody3D.new()
